@@ -55,27 +55,68 @@ export default function CrmClientsTable() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 md:space-y-4">
       {/* Toolbar */}
-      <div className="flex gap-4">
+      <div className="flex gap-2 md:gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Cerca clienti..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-9 md:pl-10 h-9 md:h-10 text-sm"
           />
         </div>
       </div>
 
       {/* Conteggio */}
-      <div className="text-sm text-muted-foreground">
-        {filteredClients.length} clienti totali
+      <div className="text-xs md:text-sm text-muted-foreground px-1 md:px-0">
+        {filteredClients.length} clienti
       </div>
 
-      {/* Tabella */}
-      <div className="border rounded-lg">
+      {/* Card View Mobile */}
+      <div className="md:hidden space-y-2">
+        {loading && filteredClients.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+              <span className="text-sm">Caricamento...</span>
+            </div>
+          </div>
+        ) : filteredClients.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            Nessun cliente trovato
+          </div>
+        ) : (
+          filteredClients.map((client) => (
+            <div key={client.customerId} className="bg-card border rounded-lg p-3 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{client.customerName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {client.customerType === "persona_fisica" ? "Persona Fisica" : "Azienda"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 text-primary shrink-0">
+                  <TrendingUp className="h-3 w-3" />
+                  <span className="font-bold text-xs">
+                    {formatCurrency(client.customerLifetimeValue || 0)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{client.acceptedQuotes}/{client.totalQuotes} preventivi</span>
+                <Badge variant={(client.activeProjects || 0) > 0 ? "default" : "outline"} className="text-[10px] px-1.5 py-0">
+                  {client.activeProjects || 0} attivi
+                </Badge>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Tabella Desktop */}
+      <div className="hidden md:block border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -124,8 +165,8 @@ export default function CrmClientsTable() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-green-600" />
-                      <span className="font-bold text-green-600">
+                      <TrendingUp className="h-4 w-4 text-primary" />
+                      <span className="font-bold text-primary">
                         {formatCurrency(
                           client.customerLifetimeValue || 0
                         )}
@@ -144,9 +185,9 @@ export default function CrmClientsTable() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-blue-500 transition-all"
+                          className="h-full bg-foreground transition-all"
                           style={{ width: `${client.conversionRate}%` }}
                         />
                       </div>

@@ -52,10 +52,10 @@ export default function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-3xl font-bold text-center text-green-600">
+            <CardTitle className="text-3xl font-bold text-center text-foreground">
               Email Inviata
             </CardTitle>
             <CardDescription className="text-center">
@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center">Password Dimenticata</CardTitle>

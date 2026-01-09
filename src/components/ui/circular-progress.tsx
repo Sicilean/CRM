@@ -20,12 +20,12 @@ export function CircularProgress({
   const circumference = radius * 2 * Math.PI
   const offset = circumference - (value / 100) * circumference
 
-  // Colore progressivo basato sulla percentuale
+  // Colore progressivo basato sulla percentuale (neutro)
   const getColor = (percentage: number) => {
-    if (percentage < 30) return 'text-red-500'
-    if (percentage < 60) return 'text-amber-500'
-    if (percentage < 90) return 'text-blue-500'
-    return 'text-green-500'
+    if (percentage < 30) return 'text-muted-foreground'
+    if (percentage < 60) return 'text-muted-foreground'
+    if (percentage < 90) return 'text-foreground'
+    return 'text-foreground'
   }
 
   return (

@@ -119,6 +119,7 @@ export async function calculateCustomerCLV(
   }
 }
 
+
 /**
  * Formatta valuta in Euro
  */

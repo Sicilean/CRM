@@ -758,7 +758,7 @@ export function QuotePublicView({ token }: QuotePublicViewProps) {
                     {formatDate(quote.created_at)}
                   </p>
                   {quote.valid_until && (
-                    <p className={isExpired ? "text-red-600" : ""}>
+                    <p className={isExpired ? "text-muted-foreground line-through" : ""}>
                       <span className="text-muted-foreground">
                         Valida fino al:
                       </span>{" "}

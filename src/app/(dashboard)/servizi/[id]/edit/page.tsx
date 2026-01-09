@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   MacroArea,
   Service,
@@ -97,9 +98,17 @@ interface DependencyFormData {
 export default function ServizioEditPage() {
   const router = useRouter();
   const params = useParams();
+  const { isAgente, loading: permissionsLoading } = usePermissions();
   const id = params.id as string;
   const isNew = id === "new";
   const supabase = createClient();
+
+  // Blocca accesso agli agenti
+  useEffect(() => {
+    if (!permissionsLoading && isAgente) {
+      router.push('/servizi');
+    }
+  }, [isAgente, permissionsLoading, router]);
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
@@ -154,34 +163,7 @@ export default function ServizioEditPage() {
   const [tagInput, setTagInput] = useState("");
   const [featureInput, setFeatureInput] = useState("");
 
-  // Load data
-  useEffect(() => {
-    const loadInitialData = async () => {
-      // Load macro areas
-      const { data: areasData } = await (supabase as any)
-        .from("macro_areas")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (areasData) setMacroAreas(areasData as MacroArea[]);
-
-      // Load all services (for dependencies)
-      const { data: servicesData } = await (supabase as any)
-        .from("services")
-        .select("*")
-        .eq("is_active", true)
-        .order("name", { ascending: true });
-      if (servicesData) setAllServices(servicesData as Service[]);
-
-      // Load service if editing
-      if (!isNew) {
-        await loadServizio();
-      }
-    };
-    loadInitialData();
-  }, [id]);
-
-  const loadServizio = async () => {
+  const loadServizio = useCallback(async () => {
     const { data, error } = await (supabase as any)
       .from("services")
       .select("*")
@@ -283,7 +265,34 @@ export default function ServizioEditPage() {
     }
 
     setLoading(false);
-  };
+  }, [id, supabase, router]);
+
+  // Load data
+  useEffect(() => {
+    const loadInitialData = async () => {
+      // Load macro areas
+      const { data: areasData } = await (supabase as any)
+        .from("macro_areas")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (areasData) setMacroAreas(areasData as MacroArea[]);
+
+      // Load all services (for dependencies)
+      const { data: servicesData } = await (supabase as any)
+        .from("services")
+        .select("*")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+      if (servicesData) setAllServices(servicesData as Service[]);
+
+      // Load service if editing
+      if (!isNew) {
+        await loadServizio();
+      }
+    };
+    loadInitialData();
+  }, [id, isNew, loadServizio, supabase]);
 
   const generateSlug = (name: string) => {
     return name

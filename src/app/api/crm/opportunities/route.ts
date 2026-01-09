@@ -10,25 +10,41 @@ export async function GET(request: NextRequest) {
     
     // Parametri query
     const stage = searchParams.get('stage')
+    const stages = searchParams.get('stages') // Supporta multiple stages: "scoperta,proposta,negoziazione"
     const assignedTo = searchParams.get('assigned_to')
     const sortBy = searchParams.get('sort_by') || 'created_at'
     const sortOrder = searchParams.get('sort_order') || 'desc'
+    const excludeStages = searchParams.get('exclude_stages') // Esclude stages: "chiuso_vinto,chiuso_perso"
     
     let query = supabase
       .from('crm_opportunities')
       .select(`
         *,
         lead:lead_id(*),
-        persona_fisica:persona_fisica_id(notion_id, nome_completo),
-        persona_giuridica:persona_giuridica_id(notion_id, ragione_sociale),
+        persona_fisica:persona_fisica_id(notion_id, nome_completo, contatti),
+        persona_giuridica:persona_giuridica_id(notion_id, ragione_sociale, email, contatti_telefonici),
+        referente:referente_id(notion_id, nome_completo, contatti),
         opportunity_quotes:crm_opportunity_quotes(
           *,
-          quote:quote_id(id, quote_number, total_amount, status)
+          quote:quote_id(id, quote_number, grand_total, status)
         )
       `, { count: 'exact' })
     
     // Filtri
-    if (stage) query = query.eq('stage', stage)
+    if (stage) {
+      query = query.eq('stage', stage)
+    } else if (stages) {
+      const stageList = stages.split(',')
+      query = query.in('stage', stageList)
+    }
+    
+    if (excludeStages) {
+      const excludeList = excludeStages.split(',')
+      for (const s of excludeList) {
+        query = query.neq('stage', s)
+      }
+    }
+    
     if (assignedTo) query = query.eq('assigned_to', assignedTo)
     
     // Ordinamento
@@ -51,20 +67,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/crm/opportunities - Crea opportunità
+// POST /api/crm/opportunities - Crea opportunità (ora senza richiedere lead_id)
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
     const body = await request.json()
     
-    // Validazione
-    if (!body.lead_id) {
-      return NextResponse.json(
-        { error: 'lead_id è obbligatorio' },
-        { status: 400 }
-      )
-    }
-    
+    // Validazione: almeno persona_fisica o persona_giuridica
     if (!body.persona_fisica_id && !body.persona_giuridica_id) {
       return NextResponse.json(
         { error: 'Devi specificare persona_fisica_id o persona_giuridica_id' },
@@ -76,9 +85,13 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     
     const opportunityData = {
-      lead_id: body.lead_id,
+      // lead_id ora è opzionale
+      lead_id: body.lead_id || null,
       persona_fisica_id: body.persona_fisica_id || null,
       persona_giuridica_id: body.persona_giuridica_id || null,
+      referente_id: body.referente_id || null,
+      nome_prospect: body.nome_prospect || null,
+      source: body.source || 'manual',
       stage: body.stage || 'scoperta',
       probability: body.probability || 50,
       expected_revenue: body.expected_revenue || null,
@@ -92,17 +105,24 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from('crm_opportunities')
       .insert(opportunityData)
-      .select()
+      .select(`
+        *,
+        persona_fisica:persona_fisica_id(notion_id, nome_completo),
+        persona_giuridica:persona_giuridica_id(notion_id, ragione_sociale),
+        referente:referente_id(notion_id, nome_completo)
+      `)
       .single()
     
     if (error) throw error
     
-    // Aggiorna lead a "qualificato" se non lo è già
-    await supabase
-      .from('crm_leads')
-      .update({ status: 'qualificato' })
-      .eq('id', body.lead_id)
-      .in('status', ['nuovo', 'contattato'])
+    // Se c'è un lead_id, aggiorna lo stato del lead (per retrocompatibilità)
+    if (body.lead_id) {
+      await supabase
+        .from('crm_leads')
+        .update({ status: 'qualificato' })
+        .eq('id', body.lead_id)
+        .in('status', ['nuovo', 'contattato'])
+    }
     
     return NextResponse.json(data, { status: 201 })
   } catch (error: any) {
@@ -113,4 +133,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Quote,
   QUOTE_STATUS_LABELS,
@@ -60,6 +61,7 @@ interface FilterState {
 
 export default function PreventiviTable() {
   const router = useRouter();
+  const { isAgente, isAdmin, isSuperAdmin } = usePermissions();
   const [preventivi, setPreventivi] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,10 +71,17 @@ export default function PreventiviTable() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const supabase = createClient();
 
+  // Solo admin possono eliminare preventivi di altri
+  // Agenti possono eliminare solo i propri preventivi (gestito da RLS)
+  const canDelete = isAdmin || isSuperAdmin;
+
   const loadPreventivi = useCallback(async () => {
     setLoading(true);
 
     try {
+      // Le RLS policies gestiscono automaticamente il filtraggio:
+      // - Admin/Super Admin vedono tutti i preventivi
+      // - Agenti vedono solo i preventivi creati da loro
       let query = (supabase as any)
         .from("quotes")
         .select("*", { count: "exact" })
@@ -199,9 +208,69 @@ export default function PreventiviTable() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header con ricerca e filtri */}
-      <div className="flex flex-col sm:flex-row gap-4">
+    <div className="space-y-3 md:space-y-4">
+      {/* Header Mobile */}
+      <div className="flex gap-2 md:hidden">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Cerca..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-9 text-sm"
+          />
+        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 px-2">
+              <Filter className="h-4 w-4" />
+              {activeFiltersCount > 0 && (
+                <Badge variant="secondary" className="ml-1 px-1 py-0 text-[10px]">
+                  {activeFiltersCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72" align="end">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-sm">Filtri</h4>
+                {activeFiltersCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs">
+                    <X className="h-3 w-3 mr-1" />
+                    Pulisci
+                  </Button>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Select
+                  value={filters.status || "__all__"}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      status: value === "__all__" ? undefined : value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Stato" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tutti gli stati</SelectItem>
+                    <SelectItem value="draft">Bozza</SelectItem>
+                    <SelectItem value="sent">Inviato</SelectItem>
+                    <SelectItem value="accepted">Accettato</SelectItem>
+                    <SelectItem value="rejected">Rifiutato</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Header Desktop */}
+      <div className="hidden md:flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
@@ -299,19 +368,83 @@ export default function PreventiviTable() {
       </div>
 
       {/* Conteggio risultati */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>
-          {totalCount} preventiv{totalCount !== 1 ? "i" : "o"} totali
-        </span>
+      <div className="flex items-center justify-between text-xs md:text-sm text-muted-foreground px-1 md:px-0">
+        <span>{totalCount} preventiv{totalCount !== 1 ? "i" : "o"}</span>
         {activeFiltersCount > 0 && (
-          <span className="text-xs">
-            {activeFiltersCount} filtro/i attivo/i
+          <span className="text-[10px] md:text-xs">
+            {activeFiltersCount} filtro/i
           </span>
         )}
       </div>
 
-      {/* Tabella */}
-      <div className="border rounded-lg">
+      {/* Card View Mobile */}
+      <div className="md:hidden space-y-2">
+        {loading && preventivi.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+              <span className="text-sm">Caricamento...</span>
+            </div>
+          </div>
+        ) : preventivi.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            Nessun preventivo trovato
+          </div>
+        ) : (
+          preventivi.map((preventivo) => (
+            <div 
+              key={preventivo.id} 
+              className="bg-card border rounded-lg p-3 space-y-2"
+              onClick={() => router.push(`/preventivi/${preventivo.id}`)}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1 mb-1">
+                    <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-medium">
+                      {preventivo.quote_number}
+                    </code>
+                    {preventivo.version > 1 && (
+                      <span className="text-[10px] text-muted-foreground">v{preventivo.version}</span>
+                    )}
+                  </div>
+                  <p className="font-medium text-sm truncate">{preventivo.client_name}</p>
+                  {preventivo.client_company && (
+                    <p className="text-xs text-muted-foreground truncate">{preventivo.client_company}</p>
+                  )}
+                </div>
+                <Badge className={`${QUOTE_STATUS_COLORS[preventivo.status]} text-[10px] px-1.5 py-0 shrink-0`}>
+                  {QUOTE_STATUS_LABELS[preventivo.status]}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-mono font-bold">{formatCurrency(preventivo.total_one_time)}</span>
+                <span className="text-muted-foreground">
+                  {new Date(preventivo.created_at).toLocaleDateString("it-IT")}
+                </span>
+              </div>
+              {(preventivo.subtotal_recurring_monthly > 0 || preventivo.subtotal_recurring_yearly > 0) && (
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                  {preventivo.subtotal_recurring_monthly > 0 && (
+                    <span className="flex items-center gap-0.5">
+                      <RefreshCw className="h-2.5 w-2.5" />
+                      +{formatCurrency(preventivo.subtotal_recurring_monthly)}/mese
+                    </span>
+                  )}
+                  {preventivo.subtotal_recurring_yearly > 0 && (
+                    <span className="flex items-center gap-0.5">
+                      <Calendar className="h-2.5 w-2.5" />
+                      +{formatCurrency(preventivo.subtotal_recurring_yearly)}/anno
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Tabella Desktop */}
+      <div className="hidden md:block border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -435,7 +568,7 @@ export default function PreventiviTable() {
                         {formatCurrency(preventivo.total_one_time)}
                       </p>
                       {preventivo.subtotal_recurring_monthly > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-blue-600">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <RefreshCw className="h-3 w-3" />
                           <span>
                             +
@@ -447,7 +580,7 @@ export default function PreventiviTable() {
                         </div>
                       )}
                       {preventivo.subtotal_recurring_yearly > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-purple-600">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           <span>
                             +
@@ -499,15 +632,17 @@ export default function PreventiviTable() {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(preventivo.id)}
-                        title="Elimina"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(preventivo.id)}
+                          title="Elimina"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

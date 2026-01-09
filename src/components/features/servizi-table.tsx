@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Service, MacroArea, PRICING_TYPE_LABELS } from "@/types/quotes.types";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Table,
   TableBody,
@@ -64,8 +65,13 @@ interface FilterState {
   is_featured?: string;
 }
 
-export default function ServiziTable() {
+interface ServiziTableProps {
+  readOnly?: boolean;
+}
+
+export default function ServiziTable({ readOnly = false }: ServiziTableProps) {
   const router = useRouter();
+  const { isAgente, isAdmin, isSuperAdmin } = usePermissions();
   const [servizi, setServizi] = useState<
     (Service & { macro_area: MacroArea | null })[]
   >([]);
@@ -76,6 +82,9 @@ export default function ServiziTable() {
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const supabase = createClient();
+  
+  // Gli agenti possono solo visualizzare, non modificare
+  const canEdit = !readOnly && !isAgente && (isAdmin || isSuperAdmin);
 
   // State per macro areas
   const [macroAreas, setMacroAreas] = useState<MacroArea[]>([]);
@@ -225,9 +234,89 @@ export default function ServiziTable() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header con ricerca e filtri */}
-      <div className="flex flex-col sm:flex-row gap-4">
+    <div className="space-y-3 md:space-y-4">
+      {/* Header Mobile */}
+      <div className="flex gap-2 md:hidden">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Cerca..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-9 text-sm"
+          />
+        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 px-2">
+              <Filter className="h-4 w-4" />
+              {activeFiltersCount > 0 && (
+                <Badge variant="secondary" className="ml-1 px-1 py-0 text-[10px]">
+                  {activeFiltersCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72" align="end">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-sm">Filtri</h4>
+                {activeFiltersCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs">
+                    <X className="h-3 w-3 mr-1" />
+                    Pulisci
+                  </Button>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Select
+                  value={filters.macro_area_id || "__all__"}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      macro_area_id: value === "__all__" ? undefined : value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Macro-Area" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tutte le aree</SelectItem>
+                    {macroAreas.map((area) => (
+                      <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {/* Filtro stato visibile solo per admin (gli agenti vedono solo servizi attivi via RLS) */}
+                {!isAgente && (
+                  <Select
+                    value={filters.is_active || "__all__"}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        is_active: value === "__all__" ? undefined : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Stato" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">Tutti gli stati</SelectItem>
+                      <SelectItem value="true">Attivi</SelectItem>
+                      <SelectItem value="false">Disattivati</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Header Desktop */}
+      <div className="hidden md:flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
@@ -323,29 +412,32 @@ export default function ServiziTable() {
                   </Select>
                 </div>
 
-                <div>
-                  <label className="text-xs font-medium mb-1 block">
-                    Stato
-                  </label>
-                  <Select
-                    value={filters.is_active || "__all__"}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        is_active: value === "__all__" ? undefined : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tutti" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">Tutti</SelectItem>
-                      <SelectItem value="true">Attivi</SelectItem>
-                      <SelectItem value="false">Disattivati</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Filtro stato visibile solo per admin (gli agenti vedono solo servizi attivi via RLS) */}
+                {!isAgente && (
+                  <div>
+                    <label className="text-xs font-medium mb-1 block">
+                      Stato
+                    </label>
+                    <Select
+                      value={filters.is_active || "__all__"}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          is_active: value === "__all__" ? undefined : value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tutti" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">Tutti</SelectItem>
+                        <SelectItem value="true">Attivi</SelectItem>
+                        <SelectItem value="false">Disattivati</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div>
                   <label className="text-xs font-medium mb-1 block">
@@ -401,19 +493,73 @@ export default function ServiziTable() {
       </div>
 
       {/* Conteggio risultati */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>
-          {totalCount} serviz{totalCount !== 1 ? "i" : "io"} totali
-        </span>
+      <div className="flex items-center justify-between text-xs md:text-sm text-muted-foreground px-1 md:px-0">
+        <span>{totalCount} serviz{totalCount !== 1 ? "i" : "io"}</span>
         {activeFiltersCount > 0 && (
-          <span className="text-xs">
-            {activeFiltersCount} filtro/i attivo/i
+          <span className="text-[10px] md:text-xs">
+            {activeFiltersCount} filtro/i
           </span>
         )}
       </div>
 
-      {/* Tabella */}
-      <div className="border rounded-lg">
+      {/* Card View Mobile */}
+      <div className="md:hidden space-y-2">
+        {loading && servizi.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+              <span className="text-sm">Caricamento...</span>
+            </div>
+          </div>
+        ) : servizi.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            Nessun servizio trovato
+          </div>
+        ) : (
+          servizi.map((servizio) => (
+            <div 
+              key={servizio.id} 
+              className={`bg-card border rounded-lg p-3 space-y-2 ${!servizio.is_active ? "opacity-50" : ""}`}
+              onClick={() => router.push(`/servizi/${servizio.id}`)}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1 mb-0.5">
+                    {servizio.is_featured && (
+                      <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 shrink-0" />
+                    )}
+                    <p className="font-medium text-sm truncate">{servizio.name}</p>
+                  </div>
+                  {servizio.short_description && (
+                    <p className="text-xs text-muted-foreground line-clamp-1">{servizio.short_description}</p>
+                  )}
+                </div>
+                <Badge variant={servizio.is_active ? "default" : "outline"} className="text-[10px] px-1.5 py-0 shrink-0">
+                  {servizio.is_active ? "Attivo" : "Off"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-mono font-bold">{formatPrice(servizio)}</span>
+                {servizio.macro_area && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] px-1.5 py-0"
+                    style={{
+                      borderColor: servizio.macro_area.color || "#ccc",
+                      color: servizio.macro_area.color || "#666",
+                    }}
+                  >
+                    {servizio.macro_area.name}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Tabella Desktop */}
+      <div className="hidden md:block border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -574,7 +720,7 @@ export default function ServiziTable() {
                         {PRICING_TYPE_LABELS[servizio.pricing_type]}
                       </Badge>
                       {servizio.is_recurring && (
-                        <RefreshCw className="h-3 w-3 text-blue-500" />
+                        <RefreshCw className="h-3 w-3 text-primary" />
                       )}
                     </div>
                   </TableCell>
@@ -598,25 +744,29 @@ export default function ServiziTable() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          router.push(`/servizi/${servizio.id}/edit`)
-                        }
-                        title="Modifica"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(servizio.id)}
-                        title="Elimina"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {canEdit && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              router.push(`/servizi/${servizio.id}/edit`)
+                            }
+                            title="Modifica"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(servizio.id)}
+                            title="Elimina"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

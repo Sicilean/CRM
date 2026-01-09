@@ -37,6 +37,20 @@ export async function checkIsAdmin(): Promise<boolean> {
 }
 
 /**
+ * Verifica se l'utente corrente è agente commerciale
+ */
+export async function checkIsAgente(): Promise<boolean> {
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase.rpc('is_agente')
+    return !!data
+  } catch (error) {
+    logger.error('Error checking agente:', error)
+    return false
+  }
+}
+
+/**
  * Verifica se l'utente corrente ha un permesso specifico
  */
 export async function checkHasPermission(resource: string, action: string): Promise<boolean> {
@@ -128,6 +142,23 @@ export async function requireSuperAdmin(): Promise<boolean> {
 
   // Check super admin
   const { data } = await supabase.rpc('is_super_admin')
+  return !!data
+}
+
+/**
+ * Middleware helper per proteggere API routes (richiede agente)
+ */
+export async function requireAgente(): Promise<boolean> {
+  const supabase = await createClient()
+  
+  // Check autenticazione
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return false
+  }
+
+  // Check agente
+  const { data } = await supabase.rpc('is_agente')
   return !!data
 }
 

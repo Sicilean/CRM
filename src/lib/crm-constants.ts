@@ -18,11 +18,11 @@ export const LEAD_STATUS_LABELS: Record<string, string> = {
 }
 
 export const LEAD_STATUS_COLORS: Record<string, string> = {
-  nuovo: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-  contattato: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-  qualificato: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-  convertito: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-  perso: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+  nuovo: 'bg-muted text-foreground',
+  contattato: 'bg-muted text-foreground',
+  qualificato: 'bg-accent text-accent-foreground',
+  convertito: 'bg-primary text-primary-foreground',
+  perso: 'bg-muted text-muted-foreground opacity-60'
 }
 
 // ========== STAGE OPPORTUNITÀ ==========
@@ -43,11 +43,11 @@ export const OPPORTUNITY_STAGE_LABELS: Record<string, string> = {
 }
 
 export const OPPORTUNITY_STAGE_COLORS: Record<string, string> = {
-  scoperta: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-  proposta: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-  negoziazione: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
-  chiuso_vinto: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-  chiuso_perso: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+  scoperta: 'bg-muted text-foreground',
+  proposta: 'bg-muted text-foreground',
+  negoziazione: 'bg-accent text-accent-foreground',
+  chiuso_vinto: 'bg-primary text-primary-foreground',
+  chiuso_perso: 'bg-muted text-muted-foreground opacity-60'
 }
 
 // Alias per compatibilità con i componenti
@@ -120,13 +120,13 @@ export const ACTIVITY_TYPE_ICONS: Record<string, any> = {
 }
 
 export const ACTIVITY_TYPE_COLORS: Record<string, string> = {
-  email: 'text-blue-600 bg-blue-50 dark:bg-blue-950',
-  telefono: 'text-green-600 bg-green-50 dark:bg-green-950',
-  meeting: 'text-purple-600 bg-purple-50 dark:bg-purple-950',
-  nota: 'text-gray-600 bg-gray-50 dark:bg-gray-950',
-  task: 'text-orange-600 bg-orange-50 dark:bg-orange-950',
-  whatsapp: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950',
-  altro: 'text-slate-600 bg-slate-50 dark:bg-slate-950'
+  email: 'text-foreground bg-muted',
+  telefono: 'text-foreground bg-muted',
+  meeting: 'text-foreground bg-muted',
+  nota: 'text-muted-foreground bg-muted',
+  task: 'text-foreground bg-muted',
+  whatsapp: 'text-foreground bg-muted',
+  altro: 'text-muted-foreground bg-muted'
 }
 
 // Array per select nel form (con value e label)

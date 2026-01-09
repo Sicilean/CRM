@@ -213,82 +213,7 @@ export default function PreventivoEditPage() {
     return `SL${year}${month}${day}-${random}`;
   };
 
-  useEffect(() => {
-    // Carica macro areas
-    const loadMacroAreas = async () => {
-      const { data } = await (supabase as any)
-        .from("macro_areas")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (data) setMacroAreas(data as MacroArea[]);
-    };
-
-    // Carica servizi
-    const loadServices = async () => {
-      const { data } = await (supabase as any)
-        .from("services")
-        .select("*, macro_area:macro_areas(*)")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-
-      if (data) {
-        // Carica varianti e addon per ogni servizio
-        const servicesWithDetails = await Promise.all(
-          (data as any[]).map(async (service: any) => {
-            const [variantsRes, addonsRes] = await Promise.all([
-              (supabase as any)
-                .from("service_variants")
-                .select("*")
-                .eq("service_id", service.id)
-                .eq("is_active", true)
-                .order("sort_order"),
-              (supabase as any)
-                .from("service_addons")
-                .select("*")
-                .eq("service_id", service.id)
-                .eq("is_active", true)
-                .order("sort_order"),
-            ]);
-            return {
-              ...service,
-              variants: variantsRes.data || [],
-              addons: addonsRes.data || [],
-            };
-          })
-        );
-        setServices(servicesWithDetails as ServiceWithDetails[]);
-      }
-    };
-
-    // Carica dipendenze servizi
-    const loadDependencies = async () => {
-      const { data } = await (supabase as any)
-        .from("service_dependencies")
-        .select("*");
-      if (data) setServiceDependencies(data as ServiceDependency[]);
-    };
-
-    loadMacroAreas();
-    loadServices();
-    loadDependencies();
-
-    if (isNew) {
-      // Imposta valori di default per nuovo preventivo
-      const validUntil = new Date();
-      validUntil.setDate(validUntil.getDate() + 30);
-
-      setFormData((prev) => ({
-        ...prev,
-        quote_number: generateQuoteNumber(),
-        valid_until: validUntil.toISOString().split("T")[0],
-      }));
-    } else {
-      loadPreventivo();
-    }
-  }, [id]);
-
-  const loadPreventivo = async () => {
+  const loadPreventivo = useCallback(async () => {
     const { data, error } = await (supabase as any)
       .from("quotes")
       .select("*")
@@ -380,7 +305,82 @@ export default function PreventivoEditPage() {
     }
 
     setLoading(false);
-  };
+  }, [id, supabase, router]);
+
+  useEffect(() => {
+    // Carica macro areas
+    const loadMacroAreas = async () => {
+      const { data } = await (supabase as any)
+        .from("macro_areas")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (data) setMacroAreas(data as MacroArea[]);
+    };
+
+    // Carica servizi
+    const loadServices = async () => {
+      const { data } = await (supabase as any)
+        .from("services")
+        .select("*, macro_area:macro_areas(*)")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+
+      if (data) {
+        // Carica varianti e addon per ogni servizio
+        const servicesWithDetails = await Promise.all(
+          (data as any[]).map(async (service: any) => {
+            const [variantsRes, addonsRes] = await Promise.all([
+              (supabase as any)
+                .from("service_variants")
+                .select("*")
+                .eq("service_id", service.id)
+                .eq("is_active", true)
+                .order("sort_order"),
+              (supabase as any)
+                .from("service_addons")
+                .select("*")
+                .eq("service_id", service.id)
+                .eq("is_active", true)
+                .order("sort_order"),
+            ]);
+            return {
+              ...service,
+              variants: variantsRes.data || [],
+              addons: addonsRes.data || [],
+            };
+          })
+        );
+        setServices(servicesWithDetails as ServiceWithDetails[]);
+      }
+    };
+
+    // Carica dipendenze servizi
+    const loadDependencies = async () => {
+      const { data } = await (supabase as any)
+        .from("service_dependencies")
+        .select("*");
+      if (data) setServiceDependencies(data as ServiceDependency[]);
+    };
+
+    loadMacroAreas();
+    loadServices();
+    loadDependencies();
+
+    if (isNew) {
+      // Imposta valori di default per nuovo preventivo
+      const validUntil = new Date();
+      validUntil.setDate(validUntil.getDate() + 30);
+
+      setFormData((prev) => ({
+        ...prev,
+        quote_number: generateQuoteNumber(),
+        valid_until: validUntil.toISOString().split("T")[0],
+      }));
+    } else {
+      loadPreventivo();
+    }
+  }, [id, isNew, loadPreventivo, supabase]);
 
   // Calcola totali con breakdown dettagliato
   const calculateTotals = useCallback(() => {
@@ -764,7 +764,7 @@ export default function PreventivoEditPage() {
         .single();
 
       if (serviceData) {
-        setServiceToConfig(serviceData as ServiceWithDetails);
+        setServiceToConfig(serviceData as unknown as ServiceWithDetails);
         setEditingItemId(item.id);
         setConfigDialogOpen(true);
       }

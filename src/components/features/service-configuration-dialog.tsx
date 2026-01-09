@@ -140,7 +140,7 @@ export default function ServiceConfigurationDialog({
   }, [open, service, initialValues]);
 
   // Calculate parameter impact
-  const calculateParameterImpact = (
+  const calculateParameterImpact = useCallback((
     param: ServicePricingParameter,
     value: number | string | boolean
   ): number => {
@@ -200,7 +200,7 @@ export default function ServiceConfigurationDialog({
     }
 
     return 0;
-  };
+  }, [service.base_price]);
 
   // Calculate prices
   const calculations = useMemo(() => {
@@ -279,7 +279,7 @@ export default function ServiceConfigurationDialog({
       unitPrice,
       lineTotal,
     };
-  }, [service, selectedVariantId, quantity, selectedAddons, parameterValues]);
+  }, [service, selectedVariantId, quantity, selectedAddons, parameterValues, calculateParameterImpact]);
 
   const handleConfirm = () => {
     onConfirm({
@@ -620,8 +620,8 @@ export default function ServiceConfigurationDialog({
                                             <span
                                               className={`text-xs font-mono ${
                                                 opt.price_impact > 0
-                                                  ? "text-green-600"
-                                                  : "text-red-600"
+                                                  ? "text-foreground"
+                                                  : "text-muted-foreground"
                                               }`}
                                             >
                                               {opt.price_impact > 0 ? "+" : ""}

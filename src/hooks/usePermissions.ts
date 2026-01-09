@@ -15,6 +15,7 @@ export function usePermissions() {
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [isAgente, setIsAgente] = useState(false)
 
   useEffect(() => {
     loadPermissions()
@@ -38,6 +39,10 @@ export function usePermissions() {
       // Check admin
       const { data: adminResult } = await supabase.rpc('is_admin')
       setIsAdmin(!!adminResult)
+
+      // Check agente
+      const { data: agenteResult } = await supabase.rpc('is_agente')
+      setIsAgente(!!agenteResult)
 
       // Get user permissions
       const { data: permsData } = await supabase.rpc('get_user_permissions')
@@ -77,6 +82,7 @@ export function usePermissions() {
     loading,
     isAdmin,
     isSuperAdmin,
+    isAgente,
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,

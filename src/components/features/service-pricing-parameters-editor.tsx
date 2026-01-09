@@ -695,8 +695,8 @@ export default function ServicePricingParametersEditor({
                                   <span
                                     className={`font-mono cursor-pointer hover:underline ${
                                       opt.price_impact >= 0
-                                        ? "text-green-600"
-                                        : "text-red-600"
+                                        ? "text-foreground"
+                                        : "text-muted-foreground"
                                     }`}
                                     onClick={() => startEditingOption(idx)}
                                   >

@@ -529,14 +529,14 @@ export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
 }
 
 export const QUOTE_STATUS_COLORS: Record<QuoteStatus, string> = {
-  draft: 'bg-gray-100 text-gray-800',
-  review: 'bg-yellow-100 text-yellow-800',
-  sent: 'bg-blue-100 text-blue-800',
-  negotiating: 'bg-purple-100 text-purple-800',
-  accepted: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-800',
-  expired: 'bg-gray-100 text-gray-600',
-  converted: 'bg-emerald-100 text-emerald-800'
+  draft: 'bg-muted text-muted-foreground',
+  review: 'bg-muted text-foreground',
+  sent: 'bg-primary/10 text-primary',
+  negotiating: 'bg-accent text-accent-foreground',
+  accepted: 'bg-primary text-primary-foreground',
+  rejected: 'bg-muted text-muted-foreground line-through',
+  expired: 'bg-muted text-muted-foreground opacity-60',
+  converted: 'bg-primary text-primary-foreground'
 }
 
 export const RECURRING_INTERVAL_LABELS: Record<RecurringInterval, string> = {
@@ -559,10 +559,10 @@ export const DEPENDENCY_TYPE_LABELS: Record<DependencyType, string> = {
 }
 
 export const DEPENDENCY_TYPE_COLORS: Record<DependencyType, string> = {
-  required: 'text-red-600 bg-red-50 border-red-200',
-  suggested: 'text-blue-600 bg-blue-50 border-blue-200',
-  conflicts_with: 'text-orange-600 bg-orange-50 border-orange-200',
-  prerequisite: 'text-purple-600 bg-purple-50 border-purple-200'
+  required: 'text-foreground bg-muted border-border',
+  suggested: 'text-muted-foreground bg-muted border-border',
+  conflicts_with: 'text-foreground bg-muted border-border',
+  prerequisite: 'text-muted-foreground bg-muted border-border'
 }
 
 // =====================================================

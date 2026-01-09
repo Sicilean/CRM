@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Service,
   ServiceVariant,
@@ -49,9 +50,13 @@ export default function ServizioDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const supabase = createClient();
+  const { isAgente, isAdmin, isSuperAdmin, loading: permissionsLoading } = usePermissions();
   const [loading, setLoading] = useState(true);
   const [servizio, setServizio] = useState<ServiceWithRelations | null>(null);
   const [dependencies, setDependencies] = useState<DependencyWithService[]>([]);
+  
+  // Solo admin e super admin possono modificare servizi
+  const canEditService = isAdmin || isSuperAdmin;
 
   const loadServizio = useCallback(async () => {
     // Carica servizio con macro_area
@@ -102,7 +107,7 @@ export default function ServizioDetailPage() {
     loadServizio();
   }, [loadServizio]);
 
-  if (loading) {
+  if (loading || permissionsLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -174,12 +179,14 @@ export default function ServizioDetailPage() {
             </p>
           </div>
         </div>
-        <Button asChild>
-          <Link href={`/servizi/${servizio.id}/edit`}>
-            <Edit className="mr-2 h-4 w-4" />
-            Modifica
-          </Link>
-        </Button>
+        {canEditService && (
+          <Button asChild>
+            <Link href={`/servizi/${servizio.id}/edit`}>
+              <Edit className="mr-2 h-4 w-4" />
+              Modifica
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

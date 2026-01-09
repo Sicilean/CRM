@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { MacroArea } from "@/types/quotes.types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,11 +49,7 @@ export default function MacroAreePage() {
     null
   );
 
-  useEffect(() => {
-    loadMacroAreas();
-  }, []);
-
-  const loadMacroAreas = async () => {
+  const loadMacroAreas = useCallback(async () => {
     const { data, error } = await (supabase as any)
       .from("macro_areas")
       .select("*")
@@ -65,7 +61,11 @@ export default function MacroAreePage() {
       setMacroAreas((data || []) as MacroArea[]);
     }
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    loadMacroAreas();
+  }, [loadMacroAreas]);
 
   const generateSlug = (name: string) => {
     return name
