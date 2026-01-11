@@ -11,7 +11,7 @@ import { CompanyInfo } from '../types/pdf-types'
 
 export interface BaseGeneratorOptions {
   companyInfo: CompanyInfo
-  documentType: 'quote' | 'invoice' | 'receipt'
+  documentType: 'quote' | 'invoice' | 'receipt' | 'project_proposal'
   includeGDPR?: boolean
 }
 

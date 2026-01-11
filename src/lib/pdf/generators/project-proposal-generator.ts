@@ -53,7 +53,7 @@ export interface ProjectProposalGeneratorOptions extends BaseGeneratorOptions {
 }
 
 export class ProjectProposalGenerator extends BasePDFGenerator {
-  private options: ProjectProposalGeneratorOptions
+  protected options: ProjectProposalGeneratorOptions
 
   constructor(options: ProjectProposalGeneratorOptions) {
     super({

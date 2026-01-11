@@ -44,10 +44,11 @@ export default function ServiceConfigurationDisplay({
 
       // Carica moduli selezionati
       if (configuration.selected_modules && configuration.selected_modules.length > 0) {
+        const moduleIds = configuration.selected_modules.map(m => m.module_id)
         const { data: modulesData } = await supabase
           .from('service_modules')
           .select('*')
-          .in('id', configuration.selected_modules)
+          .in('id', moduleIds)
         
         if (modulesData) setModules(modulesData)
       }
@@ -122,9 +123,9 @@ export default function ServiceConfigurationDisplay({
                   className="text-xs bg-blue-50 text-blue-700 border-blue-200"
                 >
                   {module.name}
-                  {configuration.module_prices && configuration.module_prices[module.id] && (
+                  {configuration.selected_modules?.find(m => m.module_id === module.id)?.calculated_price && (
                     <span className="ml-1 font-mono">
-                      +€{configuration.module_prices[module.id].toFixed(2)}
+                      +€{configuration.selected_modules.find(m => m.module_id === module.id)!.calculated_price.toFixed(2)}
                     </span>
                   )}
                 </Badge>
@@ -141,7 +142,7 @@ export default function ServiceConfigurationDisplay({
               <span className="text-sm font-medium">Parametri Personalizzati</span>
             </div>
             <div className="space-y-1 pl-6">
-              {Object.entries(configuration.parameters).map(([key, value]) => (
+              {configuration.parameters && Object.entries(configuration.parameters).map(([key, value]) => (
                 <div key={key} className="flex items-center gap-2 text-xs">
                   <span className="text-muted-foreground capitalize">
                     {key.replace(/_/g, ' ')}:
@@ -161,16 +162,16 @@ export default function ServiceConfigurationDisplay({
         )}
 
         {/* Prezzo Totale Configurazione */}
-        {configuration.calculated_price && configuration.calculated_price !== configuration.base_price && (
+        {configuration.pricing_params?.base_price && configuration.unit_price !== configuration.pricing_params.base_price && (
           <div className="pt-2 border-t">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Prezzo base:</span>
-              <span className="font-mono">€{configuration.base_price?.toFixed(2)}</span>
+              <span className="font-mono">€{configuration.pricing_params.base_price.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between text-sm font-medium mt-1">
               <span>Prezzo configurato:</span>
               <span className="font-mono text-primary">
-                €{configuration.calculated_price.toFixed(2)}
+                €{configuration.unit_price.toFixed(2)}
               </span>
             </div>
           </div>

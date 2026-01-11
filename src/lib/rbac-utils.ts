@@ -6,7 +6,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
 import type { Database } from '@/types/database.types'
-import type { GetUserPermissionsResult } from '@/types/supabase-rpc.types'
+
+// Type per risultato RPC get_user_permissions
+type GetUserPermissionsResult = Array<{
+  action_name: string
+  resource_name: string
+}>
 
 /**
  * Verifica se l'utente corrente è super admin
@@ -42,7 +47,7 @@ export async function checkIsAdmin(): Promise<boolean> {
 export async function checkIsAgente(): Promise<boolean> {
   try {
     const supabase = await createClient()
-    const { data } = await supabase.rpc('is_agente')
+    const { data } = await (supabase.rpc as any)('is_agente')
     return !!data
   } catch (error) {
     logger.error('Error checking agente:', error)
@@ -158,7 +163,7 @@ export async function requireAgente(): Promise<boolean> {
   }
 
   // Check agente
-  const { data } = await supabase.rpc('is_agente')
+  const { data } = await (supabase.rpc as any)('is_agente')
   return !!data
 }
 
@@ -190,8 +195,8 @@ export async function getUserRolesAndPermissions(userId: string) {
     }
 
     return {
-      roles: (userRoles?.data?.map((ur: UserRoleWithRole) => ur.role) || []).filter((r): r is NonNullable<typeof r> => r !== null),
-      permissions: (permissions as GetUserPermissionsResult) || []
+      roles: (userRoles?.map((ur: UserRoleWithRole) => ur.role) || []).filter((r): r is NonNullable<typeof r> => r !== null),
+      permissions: (permissions as unknown as GetUserPermissionsResult) || []
     }
   } catch (error) {
     logger.error('Error getting user roles and permissions:', error)

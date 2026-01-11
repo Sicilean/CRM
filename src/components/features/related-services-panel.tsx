@@ -77,22 +77,22 @@ export default function RelatedServicesPanel({
           } | null
         }
 
-        const filtered = relationships
-          .filter((rel: ServiceRelationship) => 
+        const filtered = (relationships as unknown as ServiceRelationship[])
+          .filter((rel) =>
             rel.service && !excludeServiceIds.includes(rel.related_service_id)
           );
 
         setRelatedServices(
-          filtered.map((rel: ServiceRelationship) => ({
+          filtered.map((rel) => ({
             id: rel.related_service_id,
             name: rel.service?.name || '',
             base_price: rel.service?.base_price || 0,
             description: rel.service?.description || undefined,
             relationship_type: rel.relationship_type,
             priority: rel.display_order || 0,
-            discount_if_bundled: null, // Non disponibile in service_relationships
+            discount_if_bundled: undefined, // Non disponibile in service_relationships
             auto_suggest: true,
-          }))
+          })) as unknown as RelatedService[]
         );
       }
     } catch (error) {

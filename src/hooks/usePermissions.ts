@@ -41,12 +41,12 @@ export function usePermissions() {
       setIsAdmin(!!adminResult)
 
       // Check agente
-      const { data: agenteResult } = await supabase.rpc('is_agente')
+      const { data: agenteResult } = await (supabase.rpc as any)('is_agente')
       setIsAgente(!!agenteResult)
 
       // Get user permissions
       const { data: permsData } = await supabase.rpc('get_user_permissions')
-      setPermissions(permsData || [])
+      setPermissions((permsData || []) as unknown as UserPermission[])
     } catch (error) {
       console.error('Error loading permissions:', error)
     } finally {

@@ -113,10 +113,10 @@ export default function CrmPipelineTable() {
       if (error) throw error
 
       // Filtro client-side per ricerca
-      let filtered = data || []
+      let filtered = (data || []) as unknown as CrmOpportunity[]
       if (searchQuery) {
         const search = searchQuery.toLowerCase()
-        filtered = filtered.filter((opp: CrmOpportunity) => {
+        filtered = filtered.filter((opp) => {
           const prospectName = opp.nome_prospect?.toLowerCase() || ''
           const pfName = opp.persona_fisica?.nome_completo?.toLowerCase() || ''
           const pgName = opp.persona_giuridica?.ragione_sociale?.toLowerCase() || ''
@@ -147,6 +147,22 @@ export default function CrmPipelineTable() {
   }, [loadOpportunities])
 
   const handleStageChange = async (opportunityId: string, newStage: string) => {
+    // Trova l'opportunità per verificare i preventivi
+    const opportunity = opportunities.find(o => o.id === opportunityId)
+    
+    // Validazione: non si può chiudere come VINTA senza almeno un preventivo
+    if (newStage === 'chiuso_vinto') {
+      const hasQuotes = opportunity?.opportunity_quotes && opportunity.opportunity_quotes.length > 0
+      if (!hasQuotes) {
+        toast({
+          title: 'Attenzione',
+          description: 'Non puoi chiudere come VINTA un\'opportunità senza almeno un preventivo collegato.',
+          variant: 'destructive',
+        })
+        return
+      }
+    }
+
     try {
       const updateData: any = { 
         stage: newStage,
@@ -530,7 +546,7 @@ export default function CrmPipelineTable() {
         <OpportunityDetailModal
           open={showOpportunityDetail}
           onOpenChange={setShowOpportunityDetail}
-          opportunity={selectedOpportunity}
+          opportunity={selectedOpportunity as any}
           onOpportunityUpdated={loadOpportunities}
         />
       )}

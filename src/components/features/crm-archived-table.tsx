@@ -90,10 +90,10 @@ export default function CrmArchivedTable() {
       if (error) throw error
 
       // Filtro client-side per ricerca
-      let filtered = data || []
+      let filtered = (data || []) as unknown as ArchivedOpportunity[]
       if (searchQuery) {
         const search = searchQuery.toLowerCase()
-        filtered = filtered.filter((opp: ArchivedOpportunity) => {
+        filtered = filtered.filter((opp) => {
           const prospectName = opp.nome_prospect?.toLowerCase() || ''
           const pfName = opp.persona_fisica?.nome_completo?.toLowerCase() || ''
           const pgName = opp.persona_giuridica?.ragione_sociale?.toLowerCase() || ''
@@ -130,6 +130,7 @@ export default function CrmArchivedTable() {
       const { error } = await supabase
         .from('crm_opportunities')
         .insert({
+          lead_id: null, // Opzionale per opportunità manuali
           persona_fisica_id: selectedOpportunity.persona_fisica?.notion_id || null,
           persona_giuridica_id: selectedOpportunity.persona_giuridica?.notion_id || null,
           referente_id: selectedOpportunity.referente?.notion_id || null,
@@ -144,7 +145,7 @@ export default function CrmArchivedTable() {
           notes: `Riattivato da opportunità precedente (${formatDateItalian(selectedOpportunity.closed_at || selectedOpportunity.created_at)}).\n\n${selectedOpportunity.notes || ''}`,
           created_by: user?.id,
           assigned_to: user?.id
-        })
+        } as any)
 
       if (error) throw error
 
@@ -396,9 +397,9 @@ export default function CrmArchivedTable() {
           <AlertDialogHeader>
             <AlertDialogTitle>Riattiva Opportunità</AlertDialogTitle>
             <AlertDialogDescription>
-              Verrà creata una <strong>nuova opportunità</strong> in fase "Scoperta" basata su questa opportunità archiviata.
+              Verrà creata una <strong>nuova opportunità</strong> in fase &quot;Scoperta&quot; basata su questa opportunità archiviata.
               <br /><br />
-              L'opportunità originale rimarrà nell'archivio come storico.
+              L&apos;opportunità originale rimarrà nell&apos;archivio come storico.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

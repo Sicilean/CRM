@@ -88,10 +88,10 @@ export default function CrmClientsWonTable() {
       if (error) throw error
 
       // Filtro client-side per ricerca
-      let filtered = data || []
+      let filtered = (data || []) as unknown as WonOpportunity[]
       if (searchQuery) {
         const search = searchQuery.toLowerCase()
-        filtered = filtered.filter((opp: WonOpportunity) => {
+        filtered = filtered.filter((opp) => {
           const prospectName = opp.nome_prospect?.toLowerCase() || ''
           const pfName = opp.persona_fisica?.nome_completo?.toLowerCase() || ''
           const pgName = opp.persona_giuridica?.ragione_sociale?.toLowerCase() || ''

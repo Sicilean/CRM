@@ -31,7 +31,7 @@ export async function generateBrandStrategyPDF(options: GeneratePDFOptions) {
         strategy,
         brandName,
         clientName,
-        companyInfo
+        companyInfo: companyInfo as any
       }) as any
     ).toBlob()
 

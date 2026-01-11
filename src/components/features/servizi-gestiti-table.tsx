@@ -81,7 +81,7 @@ export function ServiziGestitiTable() {
       const { data, error } = await query
 
       if (error) throw error
-      setServizi(data || [])
+      setServizi((data || []) as unknown as ServizioGestito[])
     } catch (error) {
       console.error('Errore caricamento servizi:', error)
     } finally {
@@ -273,9 +273,9 @@ export function ServiziGestitiTable() {
                       {servizio.is_recurring && servizio.unit_price && servizio.total_slots && servizio.slots_paid !== null ? (
                         <span className="font-mono text-sm font-medium text-orange-600">
                           € {calculateResidualValue(
-                            servizio.unit_price,
-                            servizio.total_slots,
-                            servizio.slots_paid
+                            servizio.unit_price || 0,
+                            servizio.total_slots || 0,
+                            servizio.slots_paid || 0
                           ).toFixed(2)}
                         </span>
                       ) : (

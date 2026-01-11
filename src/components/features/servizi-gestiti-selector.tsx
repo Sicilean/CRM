@@ -8,13 +8,13 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Search, Server, Plus } from 'lucide-react'
-import { QuickAddServizioGestito } from './quick-add-servizio-gestito'
+// import { QuickAddServizioGestito } from './quick-add-servizio-gestito' // File non trovato
 
 interface ServizioGestito {
   id: string
   nome: string
-  stato: string
-  tipo_servizio: string
+  stato: string | null
+  tipo: string | null
 }
 
 interface ServiziGestitiSelectorProps {
@@ -46,7 +46,7 @@ export function ServiziGestitiSelector({
     try {
       let query = supabase
         .from('servizi_gestiti')
-        .select('id, nome, stato, tipo_servizio')
+        .select('id, nome, stato, tipo')
         .is('project_id', null) // Solo servizi non ancora assegnati
         .order('nome', { ascending: true })
 
@@ -59,7 +59,7 @@ export function ServiziGestitiSelector({
 
       if (error) throw error
 
-      setServizi(data || [])
+      setServizi((data || []) as unknown as ServizioGestito[])
     } catch (error) {
       console.error('Errore caricamento servizi gestiti:', error)
     } finally {
@@ -82,7 +82,7 @@ export function ServiziGestitiSelector({
     const searchLower = searchQuery.toLowerCase()
     return (
       s.nome.toLowerCase().includes(searchLower) ||
-      s.tipo_servizio.toLowerCase().includes(searchLower)
+      (s.tipo?.toLowerCase() || '').includes(searchLower)
     )
   })
 
@@ -179,7 +179,7 @@ export function ServiziGestitiSelector({
                     
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="secondary" className="text-xs">
-                        {servizio.tipo_servizio}
+                        {servizio.tipo || 'N/D'}
                       </Badge>
                       <Badge 
                         variant={servizio.stato === 'attivo' ? 'default' : 'outline'}
@@ -205,7 +205,8 @@ export function ServiziGestitiSelector({
         </DialogFooter>
       </DialogContent>
 
-      {clientId && projectId && (
+      {/* QuickAddServizioGestito component non disponibile - file mancante */}
+      {/* {clientId && projectId && (
         <QuickAddServizioGestito
           open={quickAddOpen}
           onOpenChange={setQuickAddOpen}
@@ -216,7 +217,7 @@ export function ServiziGestitiSelector({
             setTempSelected(prev => [...prev, newServizio.id])
           }}
         />
-      )}
+      )} */}
     </Dialog>
   )
 }

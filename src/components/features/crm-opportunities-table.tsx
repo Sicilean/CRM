@@ -7,6 +7,8 @@ import { CrmOpportunity as BaseCrmOpportunity } from '@/types/database.types'
 
 // Estendi il tipo per includere le relazioni
 type CrmOpportunity = BaseCrmOpportunity & {
+  nome_prospect: string | null
+  referente: { notion_id: string; nome_completo: string } | null
   opportunity_quotes?: any[]
   lead?: any
   persona_fisica?: any
@@ -64,7 +66,7 @@ export default function CrmOpportunitiesTable() {
 
       if (error) throw error
 
-      setOpportunities(data || [])
+      setOpportunities((data || []) as unknown as CrmOpportunity[])
       setTotalCount(count || 0)
     } catch (error) {
       console.error('Error loading opportunities:', error)
@@ -288,7 +290,7 @@ export default function CrmOpportunitiesTable() {
         <OpportunityDetailModal
           open={showOpportunityDetail}
           onOpenChange={setShowOpportunityDetail}
-          opportunity={selectedOpportunity}
+          opportunity={selectedOpportunity as any}
           onOpportunityUpdated={loadOpportunities}
         />
       )}

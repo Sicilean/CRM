@@ -41,7 +41,7 @@ function makeQueryClient() {
         retry: 1,
         
         // 🚀 Mostra dati cached mentre refetcha in background
-        placeholderData: (previousData) => previousData,
+        placeholderData: (previousData: any) => previousData,
       },
       mutations: {
         // Retry mutations solo in caso di errori di rete
@@ -79,7 +79,6 @@ export function ReactQueryProvider({ children }: ReactQueryProviderProps) {
       {process.env.NODE_ENV === 'development' && (
         <ReactQueryDevtools 
           initialIsOpen={false}
-          position="bottom-right"
           buttonPosition="bottom-right"
         />
       )}

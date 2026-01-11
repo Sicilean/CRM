@@ -98,7 +98,7 @@ export function QuoteReferenteSelector({
 
       if (relazioniData && relazioniData.length > 0) {
         // Carica dettagli persone fisiche
-        const personaIds = relazioniData.map((r) => r.persona_fisica_id);
+        const personaIds = relazioniData.map((r) => r.persona_fisica_id).filter((id): id is string => id !== null);
         const { data: personeData } = await supabase
           .from("persone_fisiche")
           .select(
@@ -113,7 +113,7 @@ export function QuoteReferenteSelector({
           ),
         }));
 
-        setRelazioni(relazioniComplete);
+        setRelazioni(relazioniComplete as unknown as Relazione[]);
       } else {
         setRelazioni([]);
       }
@@ -141,7 +141,7 @@ export function QuoteReferenteSelector({
     const collegateIds = relazioni.map((r) => r.persona_fisica_id);
     const filtered =
       data?.filter((p) => !collegateIds.includes(p.notion_id)) || [];
-    setAltrePersone(filtered);
+    setAltrePersone(filtered as unknown as PersonaFisica[]);
   }, [supabase, searchQuery, relazioni]);
 
   useEffect(() => {

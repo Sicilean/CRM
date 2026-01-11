@@ -13,7 +13,7 @@ export interface FooterOptions {
   companyInfo: CompanyInfo
   pageNumber: number
   totalPages: number
-  documentType: 'quote' | 'invoice' | 'receipt'
+  documentType: 'quote' | 'invoice' | 'receipt' | 'project_proposal'
   includeGDPR?: boolean
 }
 

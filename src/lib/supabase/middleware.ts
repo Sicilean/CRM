@@ -48,7 +48,7 @@ export async function updateSession(request: NextRequest) {
   let isAgente = false
   if (user) {
     try {
-      const { data } = await supabase.rpc('is_agente')
+      const { data } = await (supabase.rpc as any)('is_agente')
       isAgente = !!data
     } catch (error) {
       console.error('Error checking agente role:', error)

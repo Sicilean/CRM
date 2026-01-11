@@ -212,7 +212,10 @@ export default function NewProspectModal({ open, onOpenChange, onProspectCreated
 
       const { error } = await supabase
         .from('crm_opportunities')
-        .insert(opportunityData)
+        .insert({
+          ...opportunityData,
+          lead_id: null // Opzionale per opportunità manuali
+        } as any)
 
       if (error) throw error
 

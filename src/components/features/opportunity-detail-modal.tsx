@@ -127,7 +127,7 @@ export default function OpportunityDetailModal({
           .order('created_at', { ascending: false })
 
         if (quotesError) throw quotesError
-        setQuotes(quotesData || [])
+        setQuotes((quotesData || []) as unknown as Quote[])
       } else {
         setQuotes([])
       }
@@ -148,7 +148,7 @@ export default function OpportunityDetailModal({
         .order('activity_date', { ascending: false })
 
       if (error) throw error
-      setActivities(data || [])
+      setActivities((data || []) as unknown as CrmActivity[])
     } catch (error) {
       console.error('Error loading activities:', error)
     } finally {
@@ -173,6 +173,18 @@ export default function OpportunityDetailModal({
   }, [open, loadQuotes, loadActivities, opportunity])
 
   const handleSave = async () => {
+    // Validazione: non si può chiudere come VINTA senza almeno un preventivo
+    if (formData.stage === 'chiuso_vinto' && opportunity.stage !== 'chiuso_vinto') {
+      if (quotes.length === 0) {
+        toast({
+          title: 'Attenzione',
+          description: 'Non puoi chiudere come VINTA un\'opportunità senza almeno un preventivo collegato.',
+          variant: 'destructive',
+        })
+        return
+      }
+    }
+
     setLoading(true)
     try {
       const updateData: any = {

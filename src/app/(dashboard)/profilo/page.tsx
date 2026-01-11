@@ -214,7 +214,10 @@ export default function ProfiloPage() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      // Type cast per evitare errore "Type instantiation is excessively deep"
+      // La tabella agent_invoices esiste nel DB ma non nei tipi generati
+      const supabaseAny = supabase as unknown as { from: (table: string) => { select: (columns: string) => { eq: (column: string, value: string) => { order: (column: string, options: { ascending: boolean }) => { order: (column: string, options: { ascending: boolean }) => Promise<{ data: AgentInvoice[] | null; error: Error | null }> } } } } };
+      const { data, error } = await supabaseAny
         .from("agent_invoices")
         .select("*")
         .eq("agent_id", user.id)
@@ -591,7 +594,9 @@ export default function ProfiloPage() {
         } = supabase.storage.from("agent-documents").getPublicUrl(fileName);
 
         // Update invoice with PDF URL
-        const { error: updateError } = await supabase
+        // Type cast: agent_invoices non è nei tipi generati
+        const supabaseUpdate = supabase as unknown as { from: (table: string) => { update: (data: Record<string, unknown>) => { eq: (col: string, val: string) => { eq: (col2: string, val2: string) => Promise<{ error: Error | null }> } } } };
+        const { error: updateError } = await supabaseUpdate
           .from("agent_invoices")
           .update({
             pdf_url: publicUrl,
@@ -635,7 +640,9 @@ export default function ProfiloPage() {
         } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { error } = await supabase
+        // Type cast: agent_invoices non è nei tipi generati
+        const supabaseUpdateEmission = supabase as unknown as { from: (table: string) => { update: (data: Record<string, unknown>) => { eq: (col: string, val: string) => { eq: (col2: string, val2: string) => Promise<{ error: Error | null }> } } } };
+        const { error } = await supabaseUpdateEmission
           .from("agent_invoices")
           .update({
             invoice_number: invoiceNumber,

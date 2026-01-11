@@ -80,7 +80,7 @@ export default function ServiceConfigurator({
 
   // State
   const [state, setState] = useState<ServiceConfiguratorState>({
-    service: { id: serviceId, name: "", base_price: 0 },
+    service: { id: serviceId, name: "", base_price: 0 } as any,
     selectedModules: [],
     moduleParameters: {},
     serviceParameters: {},
@@ -131,7 +131,7 @@ export default function ServiceConfigurator({
           id: serviceData.id, 
           name: serviceData.name, 
           base_price: basePrice 
-        },
+        } as any,
         calculatedPrice: {
           basePrice: basePrice,
           parametersPrice: 0,
@@ -164,19 +164,19 @@ export default function ServiceConfigurator({
         .eq("is_active", true)
         .order("display_order");
 
-      if (params) setParameters(params);
-      if (presetsData) setPresets(presetsData);
+      if (params) setParameters(params as unknown as ServiceParameter[]);
+      if (presetsData) setPresets(presetsData as unknown as ServicePreset[]);
 
       if (mappings) {
-        setModuleMappings(mappings);
+        setModuleMappings(mappings as unknown as ServiceToModuleMapping[]);
         interface MappingWithModule { service_modules?: ServiceModule | null; is_default?: boolean; module_id: string }
-        const modules = (mappings as MappingWithModule[])
+        const modules = (mappings as unknown as MappingWithModule[])
           .map((m) => m.service_modules)
           .filter((m): m is ServiceModule => m !== null && m !== undefined && m.is_active === true);
-        setAvailableModules(modules);
+        setAvailableModules(modules as unknown as ServiceModule[]);
 
         // Auto-select default modules
-        const defaultModules = (mappings as MappingWithModule[])
+        const defaultModules = (mappings as unknown as MappingWithModule[])
           .filter((m) => m.is_default)
           .map((m) => m.module_id);
 
@@ -191,7 +191,7 @@ export default function ServiceConfigurator({
       // Initialize parameters with defaults
       if (params) {
         const defaultParams: Record<string, any> = {};
-        params.forEach((p: ServiceParameter) => {
+        params.forEach((p) => {
           defaultParams[p.parameter_key] = p.default_value;
         });
         setState((prev) => ({
@@ -322,7 +322,7 @@ export default function ServiceConfigurator({
                   ...param,
                   parameter_key: param.key,
                   parameter_type: param.type,
-                } as ServiceParameter,
+                } as unknown as ServiceParameter,
                   value
                 );
                 modulesPrice += impact;
@@ -356,7 +356,7 @@ export default function ServiceConfigurator({
 
     switch (impact.type) {
       case "fixed":
-        if (param.parameter_type === "boolean" || param.type === "boolean") {
+        if (param.parameter_type === "boolean") {
           return value === true ? impact.price_if_true || 0 : 0;
         }
         return impact.base_value || 0;
@@ -398,37 +398,22 @@ export default function ServiceConfigurator({
 
   // Add to quote
   const handleAddToQuote = () => {
-    const configuration = {
+    const configuration: ServiceConfigurationResult = {
       service_id: state.service.id, // Usa l'ID reale del servizio
       service_name: serviceName,
       quantity: 1,
+      base_price: serviceBasePrice || 0,
       unit_price: state.calculatedPrice.total,
-      pricing_params: {
-        base_price: serviceBasePrice || 0,
-        urgenza: quoteLevelParams?.cliente_abituale || 3,
-        complessita: 3,
-        volume_lavoro: 3,
-        importanza: 3,
-        altri_costi: 0,
-        budget_interno: state.calculatedPrice.total,
-        budget_effettivo: state.calculatedPrice.total,
-      },
-      customizations: {
-        preset_id: undefined,
-        selected_modules: state.selectedModules,
-        parameters: state.serviceParameters,
-        base_price: serviceBasePrice || 0,
-        modules_total: state.calculatedPrice.modulesPrice,
-        parameters_total: state.calculatedPrice.parametersPrice,
-        calculated_price: state.calculatedPrice.total,
-        module_prices: state.selectedModules.reduce((acc, moduleId) => {
-          const foundModule = availableModules.find((m) => m.id === moduleId);
-          if (foundModule) {
-            acc[moduleId] = foundModule.base_price || 0;
-          }
-          return acc;
-        }, {} as Record<string, number>),
-      },
+      selected_modules: state.selectedModules.map(moduleId => {
+        const foundModule = availableModules.find((m) => m.id === moduleId);
+        return {
+          module_id: moduleId,
+          module_name: foundModule?.name || '',
+          parameters: state.moduleParameters[moduleId] || {},
+          calculated_price: foundModule?.base_price || 0,
+        };
+      }),
+      service_parameters: state.serviceParameters,
       notes: "",
     };
 

@@ -113,7 +113,7 @@ export function QuoteClientSelector({
           .ilike("nome_completo", `%${searchQuery}%`)
           .order("nome_completo")
           .limit(50);
-        setPersoneFisiche(data || []);
+        setPersoneFisiche((data || []) as unknown as PersonaFisica[]);
       } else {
         const { data } = await supabase
           .from("persone_giuridiche")
@@ -123,7 +123,7 @@ export function QuoteClientSelector({
           .ilike("ragione_sociale", `%${searchQuery}%`)
           .order("ragione_sociale")
           .limit(50);
-        setPersoneGiuridiche(data || []);
+        setPersoneGiuridiche((data || []) as unknown as PersonaGiuridica[]);
       }
     } catch (error) {
       console.error("Errore caricamento:", error);

@@ -230,7 +230,7 @@ export function validateIBAN(iban: string): boolean {
  */
 export function generateComplianceFooter(
   companyInfo: CompanyInfo,
-  documentType: 'quote' | 'invoice' | 'receipt'
+  documentType: 'quote' | 'invoice' | 'receipt' | 'project_proposal'
 ): string {
   const lines: string[] = []
 

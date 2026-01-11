@@ -14,6 +14,7 @@ interface LeadFromCSV {
   descrizione?: string
   fonte?: string
   note_interne?: string
+  [key: string]: any
 }
 
 // Type per risposta calcolo CLV

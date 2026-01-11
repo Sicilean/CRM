@@ -92,14 +92,14 @@ export default function ServiziTable({ readOnly = false }: ServiziTableProps) {
   // Carica macro areas per i filtri
   useEffect(() => {
     const loadMacroAreas = async () => {
-      const { data } = await supabase
+      const { data } = await ((supabase as any)
         .from("macro_areas")
         .select("*")
         .eq("is_active", true)
-        .order("sort_order", { ascending: true });
+        .order("sort_order", { ascending: true }));
 
       if (data) {
-        setMacroAreas(data);
+        setMacroAreas(data as unknown as MacroArea[]);
       }
     };
     loadMacroAreas();
@@ -142,7 +142,7 @@ export default function ServiziTable({ readOnly = false }: ServiziTableProps) {
 
       if (error) throw error;
 
-      setServizi(data || []);
+      setServizi((data || []) as unknown as (Service & { macro_area: MacroArea | null })[]);
       setTotalCount(count || 0);
     } catch (error) {
       console.error("Errore caricamento servizi:", error);

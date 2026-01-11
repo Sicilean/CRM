@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   Service,
@@ -127,6 +127,7 @@ interface ServiceWithDetails extends Service {
 export default function PreventivoEditPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params.id as string;
   const isNew = id === "new";
   const supabase = createClient();
@@ -212,6 +213,77 @@ export default function PreventivoEditPage() {
       .padStart(4, "0");
     return `SL${year}${month}${day}-${random}`;
   };
+
+  // Carica cliente da parametri query string (quando si crea da trattativa)
+  const loadClientFromQuery = useCallback(async () => {
+    const clientTypeParam = searchParams.get("client_type");
+    const clientIdParam = searchParams.get("client_id");
+
+    if (!clientTypeParam || !clientIdParam || !isNew) return;
+
+    try {
+      if (clientTypeParam === "persona_giuridica") {
+        const { data, error } = await (supabase as any)
+          .from("persone_giuridiche")
+          .select("notion_id, ragione_sociale, p_iva, codice_fiscale, sdi_code, sede_legale, email, contatti_telefonici")
+          .eq("notion_id", clientIdParam)
+          .single();
+
+        if (error || !data) {
+          console.error("Errore caricamento persona giuridica:", error);
+          return;
+        }
+
+        // Estrai email e telefono
+        const email = data.email?.find((e: any) => e.tipo?.toLowerCase() === "email")?.valore || "";
+        const phone = data.contatti_telefonici?.find((c: any) => c.tipo?.toLowerCase() === "telefono")?.valore || "";
+
+        setClientType("persona_giuridica");
+        setSelectedClientName(data.ragione_sociale);
+        setFormData((prev) => ({
+          ...prev,
+          persona_giuridica_id: data.notion_id,
+          client_name: data.ragione_sociale,
+          client_company: data.ragione_sociale,
+          client_email: email,
+          client_phone: phone,
+          client_vat: data.p_iva || "",
+          client_fiscal_code: data.codice_fiscale || "",
+          client_address: data.sede_legale || "",
+          client_sdi_code: data.sdi_code || "",
+        }));
+      } else if (clientTypeParam === "persona_fisica") {
+        const { data, error } = await (supabase as any)
+          .from("persone_fisiche")
+          .select("notion_id, nome_completo, codice_fiscale, indirizzo, contatti")
+          .eq("notion_id", clientIdParam)
+          .single();
+
+        if (error || !data) {
+          console.error("Errore caricamento persona fisica:", error);
+          return;
+        }
+
+        // Estrai email e telefono
+        const email = data.contatti?.find((c: any) => c.tipo?.toLowerCase() === "email")?.valore || "";
+        const phone = data.contatti?.find((c: any) => c.tipo?.toLowerCase() === "telefono")?.valore || "";
+
+        setClientType("persona_fisica");
+        setSelectedClientName(data.nome_completo);
+        setFormData((prev) => ({
+          ...prev,
+          persona_fisica_id: data.notion_id,
+          client_name: data.nome_completo,
+          client_email: email,
+          client_phone: phone,
+          client_fiscal_code: data.codice_fiscale || "",
+          client_address: data.indirizzo || "",
+        }));
+      }
+    } catch (error) {
+      console.error("Errore caricamento cliente:", error);
+    }
+  }, [searchParams, isNew, supabase]);
 
   const loadPreventivo = useCallback(async () => {
     const { data, error } = await (supabase as any)
@@ -377,10 +449,13 @@ export default function PreventivoEditPage() {
         quote_number: generateQuoteNumber(),
         valid_until: validUntil.toISOString().split("T")[0],
       }));
+
+      // Carica cliente da query string se presente
+      loadClientFromQuery();
     } else {
       loadPreventivo();
     }
-  }, [id, isNew, loadPreventivo, supabase]);
+  }, [id, isNew, loadPreventivo, loadClientFromQuery, supabase]);
 
   // Calcola totali con breakdown dettagliato
   const calculateTotals = useCallback(() => {
@@ -916,6 +991,27 @@ export default function PreventivoEditPage() {
               recurring_count: addon.recurring_count || null,
             }))
           );
+        }
+      }
+
+      // Collega preventivo all'opportunità se presente nella query string
+      const opportunityId = searchParams.get("opportunity_id");
+      if (opportunityId && isNew) {
+        try {
+          const { error: linkError } = await (supabase as any)
+            .from("crm_opportunity_quotes")
+            .insert({
+              opportunity_id: opportunityId,
+              quote_id: quoteId,
+            });
+
+          if (linkError) {
+            console.error("Errore collegamento opportunità:", linkError);
+            // Non blocchiamo il salvataggio se il collegamento fallisce
+          }
+        } catch (linkError) {
+          console.error("Errore collegamento opportunità:", linkError);
+          // Non blocchiamo il salvataggio se il collegamento fallisce
         }
       }
 
@@ -2493,7 +2589,7 @@ export default function PreventivoEditPage() {
                     selectedAddons: existingItem.addons.map((a) => a.addon_id),
                     parameterValues:
                       existingItem.configuration?.pricing_parameters?.reduce(
-                        (acc, p) => ({ ...acc, [p.id]: p.value }),
+                        (acc, p) => ({ ...acc, [p.parameter_id]: p.value }),
                         {}
                       ) || {},
                   };

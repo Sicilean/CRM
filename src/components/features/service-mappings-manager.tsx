@@ -157,7 +157,7 @@ export default function ServiceMappingsManager({
       } else {
         const { error } = await supabase
           .from("service_to_requirements_mapping")
-          .insert([dataToSave]);
+          .insert([dataToSave] as any);
         if (error) throw error;
       }
 
@@ -234,7 +234,7 @@ export default function ServiceMappingsManager({
       } else {
         const { error } = await supabase
           .from("service_to_brand_assets_mapping")
-          .insert([dataToSave]);
+          .insert([dataToSave] as any);
         if (error) throw error;
       }
 
@@ -309,7 +309,7 @@ export default function ServiceMappingsManager({
       } else {
         const { error } = await supabase
           .from("service_to_managed_services_mapping")
-          .insert([dataToSave]);
+          .insert([dataToSave] as any);
         if (error) throw error;
       }
 

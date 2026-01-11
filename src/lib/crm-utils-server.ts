@@ -16,7 +16,12 @@ interface CustomerCLVResult {
 }
 
 // Type per quote nella query CLV
-type QuoteForCLV = Pick<Quote, 'id' | 'grand_total' | 'status' | 'created_at'>
+type QuoteForCLV = {
+  id: string
+  grand_total: number | null
+  status: string | null
+  created_at: string | null
+}
 
 /**
  * Calcola il Customer Lifetime Value GLOBALE per un cliente (per Admin)

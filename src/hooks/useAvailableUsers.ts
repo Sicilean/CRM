@@ -33,7 +33,7 @@ export function useAvailableUsers(): UseAvailableUsersReturn {
         .order("nome", { ascending: true, nullsFirst: false });
 
       if (data) {
-        setAvailableUsers(data);
+        setAvailableUsers(data as unknown as AvailableUser[]);
       }
     } catch (error) {
       logger.error("Errore caricamento utenti:", error);
